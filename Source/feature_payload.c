@@ -1,3 +1,23 @@
+#include <stdio.h>
+
+#include <sys/types.h>
+#include <netdb.h>
+#include <netinet/if_ether.h>
+#include <time.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <ifaddrs.h>
+#include <net/ethernet.h>
+#include <signal.h>
+#include <ctype.h>
+#include <signal.h>
 #include "feature_payload.h"
 #include "mtp_send.h"
 
