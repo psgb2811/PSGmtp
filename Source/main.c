@@ -576,56 +576,14 @@ void mtp_start() {
 			else {
 				
 				printf("Received a non-Bcast frame\n");
+				populate_HAT(); //Function added by Guru
 				/*
 				printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
 				printf("Message Type: %x\n", ntohs(eheader->ether_type));
 				printf("Received on port %s\n", recvOnEtherPort); 
 				*/
-				struct local_bcast_tuple* current =  getInstance_lbcast_LL(); 
 				
-				for (; current != NULL; current = current->next) {
-					// this a port from where the frame was received
-					struct Host_Address_tuple *HAT = (struct Host_Address_tuple *) calloc (1, sizeof (struct Host_Address_tuple)); 
-					//struct child_pvid_tuple *new_cpvid = (struct child_pvid_tuple*) calloc (1, sizeof(struct child_pvid_tuple));
-					if (strcmp(current->eth_name, recvOnEtherPort) == 0) {
-						//printf("********** Host Address Table Data ***********\n");
-						printf("Frame from host came on port %s\n", current->eth_name);
-						strncpy(HAT->eth_name, current->eth_name, strlen(current->eth_name));					
-						HAT->path_cost = PATH_COST; // have to fix this - adds
-						memcpy(&HAT->mac, (struct ether_addr*)&eheader->ether_shost, sizeof(struct ether_addr)); // have to fix. 
-						
-						HAT->local = TRUE;  
-						
-						HAT->next = NULL;
-						
-						if (add_entry_HAT_LL (HAT)) {
-							printf("Source MAC: %s\n\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
-							printf("********** End Host Address Table Data ***********\n\n");
-						
-							print_entries_HAT_LL();
-							
-							// send a HAT update on all ports except port of reception
-							//create a message - provide a data buffer, MAC address and cost
-							payload = (uint8_t *)calloc (1, MAX_BUFFER_SIZE);
-							int PayloadSize;
-							PayloadSize = build_HAAdvt_message(payload, HAT->mac, HAT->path_cost);
-							printf("********** Built payload of size %d ***********\n\n", PayloadSize);
-
-							memset(interfaceNames, '\0', sizeof(char) * MAX_INTERFACES * MAX_INTERFACES);
-							int numberOfInterfaces = getActiveInterfaces(interfaceNames);
-							printf("********** Number of Interfaces %d ***********\n\n", numberOfInterfaces);
-							int i = 0;
-				            
-							for (; i < numberOfInterfaces; i++){
-								if( strcmp(interfaceNames[i], recvOnEtherPort) != 0 ){
-									printf("Sending HAAdvt on port %s\n", interfaceNames[i]);
-									ctrlSend( interfaceNames[i], payload, PayloadSize );															
-								} 
-							}   
-						}	// to add the MAC address in the HAT 
-					} // if to check if the receiver port is the same as the one in the lbcast table 
-				} // lbcast adddress for loop to check all ends
 				
 			}  // else non-bcast ends 
 

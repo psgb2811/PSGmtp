@@ -140,6 +140,7 @@ bool add_entry_HAT_LL(struct Host_Address_tuple *);
 bool find_entry_HAT_LL(struct Host_Address_tuple *);
 void print_entries_HAT_LL();
 int build_HAAdvt_message(uint8_t *, struct ether_addr, uint8_t);
+void populate_HAT();//By Guru
 
 /* check Failures */
 int checkForFailures(char **);
