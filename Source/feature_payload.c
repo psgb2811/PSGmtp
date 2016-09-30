@@ -950,7 +950,7 @@ int build_HAAdvt_message(uint8_t *data, struct ether_addr mac, uint8_t cost) {
 	return payloadLen;
 }
 
-void populate_HAT() //Function added by Guru
+void populate_HAT(char *port) //Function added by Guru
 {
 struct local_bcast_tuple* current =  getInstance_lbcast_LL(); 
 				
@@ -958,7 +958,7 @@ struct local_bcast_tuple* current =  getInstance_lbcast_LL();
 					// this a port from where the frame was received
 					struct Host_Address_tuple *HAT = (struct Host_Address_tuple *) calloc (1, sizeof (struct Host_Address_tuple)); 
 					//struct child_pvid_tuple *new_cpvid = (struct child_pvid_tuple*) calloc (1, sizeof(struct child_pvid_tuple));
-					if (strcmp(current->eth_name, recvOnEtherPort) == 0) {
+					if (strcmp(current->eth_name, port) == 0) {
 						//printf("********** Host Address Table Data ***********\n");
 						printf("Frame from host came on port %s\n", current->eth_name);
 						strncpy(HAT->eth_name, current->eth_name, strlen(current->eth_name));					
@@ -988,7 +988,7 @@ struct local_bcast_tuple* current =  getInstance_lbcast_LL();
 							int i = 0;
 				            
 							for (; i < numberOfInterfaces; i++){
-								if( strcmp(interfaceNames[i], recvOnEtherPort) != 0 ){
+								if( strcmp(interfaceNames[i], port) != 0 ){
 									printf("Sending HAAdvt on port %s\n", interfaceNames[i]);
 									ctrlSend( interfaceNames[i], payload, PayloadSize );															
 								} 
