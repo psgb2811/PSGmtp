@@ -576,7 +576,7 @@ void mtp_start() {
 			else {
 				
 				printf("Received a non-Bcast frame\n");
-				populate_HAT(); //Function added by Guru
+				populate_HAT(recvOnEtherPort); //Function added by Guru
 				/*
 				printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
