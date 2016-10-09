@@ -952,7 +952,10 @@ int build_HAAdvt_message(uint8_t *data, struct ether_addr mac, uint8_t cost) {
 
 void populate_HAT(char *port) //Function added by Guru
 {
+	interfaceNames = (char**) calloc (MAX_INTERFACES* MAX_INTERFACES, sizeof(char));
 struct local_bcast_tuple* current =  getInstance_lbcast_LL(); 
+	uint8_t *payload = NULL;
+	eheader = (struct ether_header*)recvBuffer;
 				
 				for (; current != NULL; current = current->next) {
 					// this a port from where the frame was received
