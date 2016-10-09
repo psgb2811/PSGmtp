@@ -807,7 +807,7 @@ bool add_entry_lbcast_LL(struct local_bcast_tuple *node) {
  *    true      If element is found.
  *    false     If element is not found.
 **/
-
+bool find_entry_lbcast_LL(struct local_bcast_tuple *node) {
   struct local_bcast_tuple *current = local_bcast_head;
 
   if (current != NULL) {
