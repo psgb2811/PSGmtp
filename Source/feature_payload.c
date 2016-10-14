@@ -952,6 +952,7 @@ int build_HAAdvt_message(uint8_t *data, struct ether_addr mac, uint8_t cost) {
 
 void populate_HAT(char *port) //Function added by Guru
 {
+	uint8_t recvBuffer[MAX_BUFFER_SIZE];
 	char **interfaceNames;
 	struct ether_header *eheader = NULL;
 	interfaceNames = (char**) calloc (MAX_INTERFACES* MAX_INTERFACES, sizeof(char));
