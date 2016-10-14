@@ -952,6 +952,8 @@ int build_HAAdvt_message(uint8_t *data, struct ether_addr mac, uint8_t cost) {
 
 void populate_HAT(char *port) //Function added by Guru
 {
+	char **interfaceNames;
+	struct ether_header *eheader = NULL;
 	interfaceNames = (char**) calloc (MAX_INTERFACES* MAX_INTERFACES, sizeof(char));
 struct local_bcast_tuple* current =  getInstance_lbcast_LL(); 
 	uint8_t *payload = NULL;
@@ -980,7 +982,7 @@ struct local_bcast_tuple* current =  getInstance_lbcast_LL();
 							
 							// send a HAT update on all ports except port of reception
 							//create a message - provide a data buffer, MAC address and cost
-							payload = (uint8_t *)calloc (1, MAX_BUFFER_SIZE);
+							payload = (uint8_t *) calloc (1, MAX_BUFFER_SIZE);
 							int PayloadSize;
 							PayloadSize = build_HAAdvt_message(payload, HAT->mac, HAT->path_cost);
 							printf("********** Built payload of size %d ***********\n\n", PayloadSize);
