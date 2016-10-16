@@ -531,9 +531,9 @@ void mtp_start() {
 			eheader = (struct ether_header*)recvBuffer;
 
 			// read ethernet header
-			/*printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
+			printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 			  printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
-			  printf("Message Type: %x\n", ntohs(eheader->ether_type));*/
+			  printf("Message Type: %x\n", ntohs(eheader->ether_type));
 populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 			populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 			// Check if the data frame is a broadcast.
