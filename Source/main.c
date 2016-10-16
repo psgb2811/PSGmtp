@@ -534,7 +534,8 @@ void mtp_start() {
 			/*printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 			  printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
 			  printf("Message Type: %x\n", ntohs(eheader->ether_type));*/
-
+populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
+			populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 			// Check if the data frame is a broadcast.
 			if (strncmp(ether_ntoa((struct ether_addr *)&eheader->ether_dhost), "ff:ff:ff:ff:ff:ff", 17) == 0) {
 				// if the frame is a broadcast frame.
