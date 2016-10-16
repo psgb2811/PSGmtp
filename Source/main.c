@@ -571,13 +571,15 @@ void mtp_start() {
 					} 
 				}
 				//print_entries_cpvid_LL();
+				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
+				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 			} 
 			// NS added the following to collect data on host MAC address and ports
 			else {
 				
 				printf("Received a non-Bcast frame\n");
-				populate_HAT(recvOnEtherPort); //Function added by Guru
-				populate_HAT(recvOnEtherPort); //Function added by Guru
+				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
+				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 				/*
 				printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
