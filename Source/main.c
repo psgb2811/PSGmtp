@@ -222,8 +222,7 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
-			// gettimeofday(&t0, 0);
-					clock_gettime(CLOCK_REALTIME,&start);
+	
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
@@ -259,7 +258,7 @@ void mtp_start() {
 				} 
 			
 //r and g added
-		printf("Code executed in %f milliseconds.",(double)(difftime(time_advt_fin, time_advt_beg));
+	
 			}
 			
 
@@ -272,6 +271,7 @@ void mtp_start() {
 				printf("\n\n\n");
 
 			}
+				printf("Code executed in %f milliseconds.",(double)(difftime(time_advt_fin, time_advt_beg)));
 			// reset time.
 			time(&time_advt_beg);
 		} 
