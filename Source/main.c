@@ -255,7 +255,7 @@ void mtp_start() {
 				print_entries_cpvid_LL();               // CHILD PVID TABLE
 				print_entries_lbcast_LL();              // LOCAL HOST PORTS
 				printf("\n\n\n");
-				printf("convergence time = %0.12f seconds to rectify failures \n", time_taken);
+				printf("convergence time = %0.25f seconds to rectify failures \n", time_taken);
 			}
 			// reset time.
 			time(&time_advt_beg);
