@@ -258,7 +258,7 @@ void mtp_start() {
 				} 
 			
 //r and g added
-	
+	printf("Code executed in %f milliseconds.",(double)(difftime(time_advt_fin, time_advt_beg)));
 			}
 			
 
@@ -271,7 +271,7 @@ void mtp_start() {
 				printf("\n\n\n");
 
 			}
-				printf("Code executed in %f milliseconds.",(double)(difftime(time_advt_fin, time_advt_beg)));
+				
 			// reset time.
 			time(&time_advt_beg);
 		} 
