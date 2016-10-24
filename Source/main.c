@@ -225,13 +225,13 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
-	time(&conv_beg);
+	
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
 
 			if ( numberOfDeletions != 0) {
-
+time(&conv_beg);
 				int i = 0;
 				for (; i < numberOfInterfaces; i++) {
 					payload = (uint8_t*) calloc (1, MAX_BUFFER_SIZE);
@@ -258,12 +258,14 @@ void mtp_start() {
 						ctrlSend(c1->eth_name, payload, payloadLen);
 					}
 					free(payload);
-								
+	
+			}
+			
+											
 //r and g added
 					time(&conv_fin)
 	printf("Code executed in %f milliseconds.",(double)(difftime(conv_fin, conv_beg)));
-			}
-				} 
+			} 
 
 			
 
