@@ -58,7 +58,7 @@ void learn_active_interfaces();  // used in main only once on startup
 bool checkInterfaceIsActive(char *);  // not used - comment by NS
 // *** added by NS
 clock_t conv_time;
-;
+
 double time_taken;
 void sig_handler(int signo); 
 // *** End addition by NS
@@ -261,9 +261,9 @@ void mtp_start() {
 			
 //r and g added
 			//conv_time = clock() - conv_time + time_adv_fin;
-    		 time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
+    	//	 time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
 				
-			gettimeofday(&t1, 0);	
+		//	gettimeofday(&t1, 0);	
     			
 			}
 			
@@ -275,10 +275,12 @@ void mtp_start() {
 				print_entries_cpvid_LL();               // CHILD PVID TABLE
 				print_entries_lbcast_LL();              // LOCAL HOST PORTS
 				printf("\n\n\n");
-				printf("convergence time = %0.25f seconds to rectify failures \n", time_taken);
+			//	printf("convergence time = %0.25f seconds to rectify failures \n", time_taken);
 				
-				   elapsed = timedifference_msec(t0, t1);
- 				  printf("Code executed in %f milliseconds.\n", elapsed);
+				   //elapsed = timedifference_msec(t0, t1);
+				time_taken = (double)(t1.tv_usec - t0.tv_usec) / 1000000 + (double)(t1.tv_sec - t0.tv_sec);
+
+ 				  printf("Code executed in %f milliseconds.\n", time_taken);
 			}
 			// reset time.
 			time(&time_advt_beg);
