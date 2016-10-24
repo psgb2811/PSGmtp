@@ -276,6 +276,8 @@ time(&conv_beg);
 				print_entries_cpvid_LL();               // CHILD PVID TABLE
 				print_entries_lbcast_LL();              // LOCAL HOST PORTS
 				printf("\n\n\n");
+					printf("Code executed in %f milliseconds.",(double)(difftime(conv_fin, conv_beg)));
+
 
 			}
 				
