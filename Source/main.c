@@ -165,6 +165,9 @@ void mtp_start() {
 	// time_t, timers for checking hello time.
 	time_t time_advt_beg;
 	time_t time_advt_fin;
+	//r and g added
+	time_t conv_beg;
+	time_t conv_fin;
 	uint8_t *payload = NULL;
 
 	// clear the memory
@@ -222,7 +225,7 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
-	
+	time(&conv_beg);
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
@@ -255,11 +258,13 @@ void mtp_start() {
 						ctrlSend(c1->eth_name, payload, payloadLen);
 					}
 					free(payload);
-				} 
-			
+								
 //r and g added
-	printf("Code executed in %f milliseconds.",(double)(difftime(time_advt_fin, time_advt_beg)));
+					time(&conv_fin)
+	printf("Code executed in %f milliseconds.",(double)(difftime(conv_fin, conv_beg)));
 			}
+				} 
+
 			
 
 			// print all tables.
