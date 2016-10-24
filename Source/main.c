@@ -193,7 +193,7 @@ void mtp_start() {
 	while (true) {
 		time(&time_advt_fin);
 		
-   gettimeofday(&t0, 0);
+  
 		conv_time=clock();
 		// Send Hello Periodic, only if have atleast One VID in Main VID Table.
 		if ((double)(difftime(time_advt_fin, time_advt_beg) >= PERIODIC_HELLO_TIME)) {
@@ -224,7 +224,7 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
-			
+			 gettimeofday(&t0, 0);
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
