@@ -263,7 +263,7 @@ void mtp_start() {
 			//conv_time = clock() - conv_time + time_adv_fin;
     	//	 time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
 				
-		//	gettimeofday(&t1, 0);	
+			gettimeofday(&t1, 0);	
     			
 			}
 			
