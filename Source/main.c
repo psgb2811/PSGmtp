@@ -274,7 +274,7 @@ time(&conv_beg);
 			// print all tables.
 			if ((hasCPVIDDeletions == true) || (numberOfDeletions > 0)) {
 				
-				printf("Code executed in %f milliseconds.",(double)(difftime(time_advt_fin, time_advt_beg)));
+				printf("Convergence executed in %f seconds.",(double)(difftime(conv_fin, conv_beg)));
 				print_entries_LL();                     // MAIN VID TABLE
 				print_entries_bkp_LL();                 // BKP VID TABLE
 				print_entries_cpvid_LL();               // CHILD PVID TABLE
