@@ -285,7 +285,7 @@ void mtp_start() {
  				  printf("Code executed in %f milliseconds.\n", time_taken);*/
 				
 				clock_gettime(CLOCK_REALTIME,&end);
-				time_taken=((((unsigned64)start.tv_sec) * ((unsigned64)(1000000000L))) + ((unsigned64)(start.tv_nsec))))
+				time_taken=((((unsigned64)start.tv_sec) * ((unsigned64)(1000000000L))) + ((unsigned64)(start.tv_nsec))));
 				  printf("Code executed in %f milliseconds.\n", time_taken);
 			}
 			// reset time.
