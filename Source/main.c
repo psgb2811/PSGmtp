@@ -264,6 +264,8 @@ time(&conv_beg);
 											
 //r and g added
 					time(&conv_fin);
+				
+				
 	printf("Code executed in %f milliseconds.",(double)(difftime(conv_fin, conv_beg)));
 			} 
 
@@ -282,6 +284,8 @@ time(&conv_beg);
 			}
 				
 			// reset time.
+			printf("Code executed in %f milliseconds.",(double)(difftime(time_adv_fin, time_adv_beg)));
+
 			time(&time_advt_beg);
 		} 
 
