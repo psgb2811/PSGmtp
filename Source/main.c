@@ -41,6 +41,7 @@ int getActiveInterfaces(char **);  /// used often -seems to do all the operation
 void learn_active_interfaces();  // used in main only once on startup
 bool checkInterfaceIsActive(char *);  // not used - comment by NS
 // *** added by NS
+clock_t conv_time;
 void sig_handler(int signo); 
 // *** End addition by NS
 
@@ -202,6 +203,7 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
+			conv_time=clock();
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
@@ -235,8 +237,13 @@ void mtp_start() {
 					}
 					free(payload);
 				} 
+			
 
+			conv_time = clock() - conv_time;
+    			double time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
+    			printf("convergence time = %f seconds to rectify failures \n", time_taken);
 			}
+			
 
 			// print all tables.
 			if ((hasCPVIDDeletions == true) || (numberOfDeletions > 0)) {
@@ -534,13 +541,9 @@ void mtp_start() {
 			printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 			  printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
 			  printf("Message Type: %x\n", ntohs(eheader->ether_type));
-populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
-			populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 			// Check if the data frame is a broadcast.
 			if (strncmp(ether_ntoa((struct ether_addr *)&eheader->ether_dhost), "ff:ff:ff:ff:ff:ff", 17) == 0) {
 				// if the frame is a broadcast frame.
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 				printf("Received broadcast frame\n");
 
 				// Send it to all host ports, first.
@@ -574,13 +577,9 @@ populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 					} 
 				}
 				//print_entries_cpvid_LL();
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
-			} 
+							} 
 			// NS added the following to collect data on host MAC address and ports
 			else {
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 				printf("Received a non-Bcast frame\n");
 				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
 				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
