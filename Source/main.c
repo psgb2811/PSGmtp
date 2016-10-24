@@ -46,16 +46,6 @@ float timedifference_msec(struct timeval t0, struct timeval t1)
 
 //end r and g
 
-//r an g added
-#include <sys/time.h>
-
-float timedifference_msec(struct timeval t0, struct timeval t1)
-{
-    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
-}
-
-//end r and g
-
 
 #define ETH_MTP_CTRL    0x8850
 #define MAX_VID_LIST    20
@@ -270,7 +260,7 @@ void mtp_start() {
 				} 
 			
 //r and g added
-			conv_time = clock() - conv_time + time_adv_fin;
+			//conv_time = clock() - conv_time + time_adv_fin;
     		 time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
 				
 			gettimeofday(&t1, 0);	
