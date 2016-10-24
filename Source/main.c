@@ -241,7 +241,7 @@ void mtp_start() {
 
 			conv_time = clock() - conv_time;
     			double time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
-    			printf("convergence time = %f seconds to rectify failures \n", time_taken);
+    			
 			}
 			
 
@@ -252,6 +252,7 @@ void mtp_start() {
 				print_entries_cpvid_LL();               // CHILD PVID TABLE
 				print_entries_lbcast_LL();              // LOCAL HOST PORTS
 				printf("\n\n\n");
+				printf("convergence time = %f seconds to rectify failures \n", time_taken);
 			}
 			// reset time.
 			time(&time_advt_beg);
