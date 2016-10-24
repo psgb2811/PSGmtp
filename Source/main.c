@@ -42,6 +42,7 @@ void learn_active_interfaces();  // used in main only once on startup
 bool checkInterfaceIsActive(char *);  // not used - comment by NS
 // *** added by NS
 clock_t conv_time;
+double time_taken;
 void sig_handler(int signo); 
 // *** End addition by NS
 
@@ -240,7 +241,7 @@ void mtp_start() {
 			
 
 			conv_time = clock() - conv_time;
-    			double time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
+    		 time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
     			
 			}
 			
