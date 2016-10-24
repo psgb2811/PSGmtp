@@ -34,7 +34,7 @@
 
 //r an g added
 #include <sys/time.h>
-
+/*
  struct timeval t0;
    struct timeval t1;
    float elapsed;
@@ -43,6 +43,9 @@ float timedifference_msec(struct timeval t0, struct timeval t1)
 {
     return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
 }
+*/
+struct timespec start;
+struct timespec end;
 
 //end r and g
 
@@ -191,10 +194,8 @@ void mtp_start() {
 
 	time(&time_advt_beg);
 	while (true) {
-		time(&time_advt_fin);
-		
-  
-		conv_time=clock();
+		//time(&time_advt_fin);
+		//conv_time=clock();
 		// Send Hello Periodic, only if have atleast One VID in Main VID Table.
 		if ((double)(difftime(time_advt_fin, time_advt_beg) >= PERIODIC_HELLO_TIME)) {
 			memset(interfaceNames, '\0', sizeof(char) * MAX_INTERFACES * MAX_INTERFACES);
@@ -224,7 +225,8 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
-			 gettimeofday(&t0, 0);
+			// gettimeofday(&t0, 0);
+					clock_gettime(CLOCK_REALTIME,&start);
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
@@ -263,7 +265,7 @@ void mtp_start() {
 			//conv_time = clock() - conv_time + time_adv_fin;
     	//	 time_taken = ((double)conv_time)/CLOCKS_PER_SEC; // in seconds
 				
-			gettimeofday(&t1, 0);	
+			//gettimeofday(&t1, 0);	
     			
 			}
 			
@@ -276,11 +278,15 @@ void mtp_start() {
 				print_entries_lbcast_LL();              // LOCAL HOST PORTS
 				printf("\n\n\n");
 			//	printf("convergence time = %0.25f seconds to rectify failures \n", time_taken);
-				
+				/*
 				   //elapsed = timedifference_msec(t0, t1);
 				time_taken = (double)(t1.tv_usec - t0.tv_usec) / 1000000 + (double)(t1.tv_sec - t0.tv_sec);
 
- 				  printf("Code executed in %f milliseconds.\n", time_taken);
+ 				  printf("Code executed in %f milliseconds.\n", time_taken);*/
+				
+				clock_gettime(CLOCK_REALTIME,&end);
+				time_taken=((((unsigned64)start.tv_sec) * ((unsigned64)(1000000000L))) + ((unsigned64)(start.tv_nsec))))
+				  printf("Code executed in %f milliseconds.\n", time_taken);
 			}
 			// reset time.
 			time(&time_advt_beg);
