@@ -41,7 +41,8 @@ int getActiveInterfaces(char **);  /// used often -seems to do all the operation
 void learn_active_interfaces();  // used in main only once on startup
 bool checkInterfaceIsActive(char *);  // not used - comment by NS
 // *** added by NS
-clock_t conv_time;
+clock_t conv_
+;
 double time_taken;
 void sig_handler(int signo); 
 // *** End addition by NS
@@ -175,6 +176,7 @@ void mtp_start() {
 	time(&time_advt_beg);
 	while (true) {
 		time(&time_advt_fin);
+		conv_time=clock();
 		// Send Hello Periodic, only if have atleast One VID in Main VID Table.
 		if ((double)(difftime(time_advt_fin, time_advt_beg) >= PERIODIC_HELLO_TIME)) {
 			memset(interfaceNames, '\0', sizeof(char) * MAX_INTERFACES * MAX_INTERFACES);
@@ -204,7 +206,7 @@ void mtp_start() {
 			memset(deletedVIDs, '\0', sizeof(char) * MAX_VID_LIST * MAX_VID_LIST);
 
 			// check for failures and delete if any VID exceeds periodic hello by (PERIODIC_HELLO_TIME * 3)
-			conv_time=clock();
+			
 			int numberOfDeletions = checkForFailures(deletedVIDs);
 
 			bool hasCPVIDDeletions = checkForFailuresCPVID();
