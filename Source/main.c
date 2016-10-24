@@ -41,7 +41,7 @@ int getActiveInterfaces(char **);  /// used often -seems to do all the operation
 void learn_active_interfaces();  // used in main only once on startup
 bool checkInterfaceIsActive(char *);  // not used - comment by NS
 // *** added by NS
-clock_t conv_
+clock_t conv_time;
 ;
 double time_taken;
 void sig_handler(int signo); 
