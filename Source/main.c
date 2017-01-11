@@ -613,7 +613,7 @@ time(&conv_beg);
 			else {
 				printf("Received a non-Bcast frame\n");
 				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
-				populate_HAT(recvOnEtherPort); //Function added by Guru and Rajesh
+				printf("\nNew Function Executed\n");
 				/*
 				printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
