@@ -834,6 +834,7 @@ bool delete_entry_lbcast_LL(char *port) {
   struct local_bcast_tuple *previous = NULL;
   bool isPortDeleted = false;
 
+  //printf("%s deleted from local host table value of \n",current->eth_name);
   while (current != NULL) {
     if (strcmp(current->eth_name, port) == 0) {
       if (current == local_bcast_head) {
@@ -854,6 +855,7 @@ bool delete_entry_lbcast_LL(char *port) {
     previous = current;
     current = current->next;
   }
+  //print_entries_lbcast_LL();
   return isPortDeleted;
 }
 
@@ -913,9 +915,10 @@ void print_entries_HAT_LL() {
   printf("\n###################   Host Address Table   ###############\n");
 
   for (current = HAT_head; current != NULL; current = current->next) {
-    printf("port name \t\t cost \t\t seq num \t\t mac address \t\t local\n");
-	printf("%s\t\t\t%d\t\t%d\t\t%s\t\t%d\n", current->eth_name, current->path_cost,  current->sequence_number, ether_ntoa(&current->mac), current->local);
-  }
+    printf("port name \t\t cost \t\t seq num \t\t mac\t\t local \t\t switch-id\n");
+	printf("%s\t\t\t%d\t\t%d\t\t%s\t\t%d\t\t", current->eth_name, current->path_cost,  current->sequence_number, ether_ntoa(&current->mac), current->local );
+	printf("%s\n",ether_ntoa((struct ether_addr*)&current->switch_id->ether_addr_octet));
+ }
   printf("\n###################   End Host Address Table   ###############\n");
 }
 
@@ -1036,14 +1039,21 @@ void print_entries_control_table() {
 struct ether_addr* get_switchid() //created by Guru and Rajesh
 {
 	struct control_ports *current;
-	int fd,i=0,j,k;
+	int fd,i=0,j,k,flag=0;
     struct ifreq ifr;
     char *iface;
     struct ether_addr *temp_mac =(struct ether_addr *) calloc (1, sizeof (struct ether_addr));
      
-	for (current = control_ports_head; current != NULL; current = current->next){
+	for (current = control_ports_head; (current != NULL || flag!=1); current = current->next){
+		if(current==NULL && flag ==0){
+			current = (struct control_ports *) local_bcast_head;
+			printf("\n%s\n",current->eth_name);
+			flag=1;
+		}
 		struct ether_addr *mac = (struct ether_addr *) calloc (1, sizeof (struct ether_addr));
 		iface=current->eth_name;
+		//printf("\nFlag:%d\t%s\n",flag,current->eth_name);
+		print_entries_lbcast_LL();
 		
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
  

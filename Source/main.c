@@ -564,7 +564,7 @@ void mtp_start() {
 				//printf("\nIt is a control frame");
 				continue;
 			}
-			printf("\nIgnored control frame");
+			printf("\nNot a control frame");
 			// read ethernet header
 			eheader = (struct ether_header*)recvBuffer;
 
@@ -632,13 +632,14 @@ void mtp_start() {
 				
 				struct control_ports* current =  getInstance_control_LL(); 
 				struct Host_Address_tuple *HAT = (struct Host_Address_tuple *) calloc (1, sizeof (struct Host_Address_tuple)); 
+				struct ether_addr * switch_id =(struct ether_addr *) calloc (1, sizeof (struct ether_addr *));
 				for (; current != NULL; current = current->next) {
 					// this a port from where the frame was received
 					if (strcmp(current->eth_name, recvOnEtherPort) == 0) {
 						strncpy(HAT->eth_name, current->eth_name, strlen(current->eth_name));	
 						//struct ether_addr *s_id 
 						HAT->switch_id = get_switchid(); //Guru and Rajesh
-						printf("Switch ID:%s\n",ether_ntoa((struct ether_addr*)&HAT->switch_id->ether_addr_octet));
+						
 						HAT->path_cost = PATH_COST; // starts with path cost 0 as this is the local port 
 						HAT->sequence_number = SEQUENCE_NUMBER; // starts with sequence number 0 as this is the local port 
 						memcpy(&HAT->mac, (struct ether_addr*)&eheader->ether_shost, sizeof(struct ether_addr)); 
@@ -646,6 +647,7 @@ void mtp_start() {
 						// #####NS include current time 
 						time(&(HAT->time_current));
 						HAT->next = NULL;
+						printf("Switch ID:%s\n",ether_ntoa((struct ether_addr*)&HAT->switch_id->ether_addr_octet));
 						printf("\nCompleted copying\n");
 						
 
