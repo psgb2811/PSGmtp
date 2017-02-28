@@ -1,0 +1,7 @@
+sudo pkill mtpd
+sudo pkill bcast
+rm -rf bin
+mkdir bin
+gcc Source/*.c -o bin/mtpd
+gcc Bcast/bcast.c -o bin/bcast
+
