@@ -29,6 +29,7 @@
 #define MTP_TYPE_JOIN_MSG       1  // Named as NULL MSG in OPNET.
 #define MTP_TYPE_PERODIC_MSG   	2
 #define MTP_TYPE_VID_ADVT	      3
+#define MTP_HAAdvt_TYPE           4
 
 #define MAX_MAIN_VID_TBL_PATHS  3
 
@@ -39,8 +40,11 @@
 #define NON_PVID_PORT		        2
 
 #define PATH_COST		            0
+#define SEQUENCE_NUMBER         0
 
 #define PERIODIC_HELLO_TIME	    2.0
+#define TRUE                    1
+#define FALSE                   0 
 
 /* Type of Ports */
 #define MTP_PORT                1
@@ -58,6 +62,7 @@ struct vid_addr_tuple {
 	struct ether_addr mac;
 	int membership;			// Membership PRIMARY, SECONDARY, TERTIARY
 };
+
 
 struct interface_tracker_t {
   char eth_name[ETH_ADDR_LEN];
@@ -83,6 +88,24 @@ struct child_pvid_tuple {
 struct local_bcast_tuple {
   char eth_name[ETH_ADDR_LEN];          // Host port Name
   struct local_bcast_tuple *next;
+};
+
+/* NS adds - control ports table */
+struct control_ports {
+  char eth_name[ETH_ADDR_LEN];          //  port Name
+  struct control_ports *next;
+};
+
+/* NS Adds - Host Address Table */
+struct Host_Address_tuple {
+	struct ether_addr *switch_id;
+  char eth_name[ETH_ADDR_LEN];          // Port of access for host
+  uint8_t path_cost;		// path cost to reach host.
+  struct ether_addr mac;   // MAC address of host 
+  bool local;  // if the host is local this flag will be set to true - else false
+  uint8_t sequence_number; // 26 Sept 2016
+  time_t time_current; 
+  struct Host_Address_tuple *next;
 };
 
 /* Function Prototypes for payloads */
@@ -121,6 +144,22 @@ void print_entries_lbcast_LL();
 bool delete_entry_lbcast_LL(char *port);
 struct local_bcast_tuple* getInstance_lbcast_LL();
 //void update_hello_time_cpvid_LL(struct ether_addr *);
+
+/* Function prototypes for Host Address Table  */
+bool add_entry_HAT_LL(struct Host_Address_tuple *);
+bool find_entry_HAT_LL(struct Host_Address_tuple *);
+void print_entries_HAT_LL();
+int build_HAAdvt_message(uint8_t *, struct ether_addr, uint8_t, uint8_t);
+void print_HAAdvt_message_content(uint8_t *);
+
+/* function prototypes for control ports table */
+struct control_ports* getInstance_control_LL();
+bool add_entry_control_table(struct control_ports *);
+bool find_entry_control_table(struct control_ports  *);
+void print_entries_control_table(); 
+struct ether_addr* get_switchid();
+
+
 
 /* check Failures */
 int checkForFailures(char **);

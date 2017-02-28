@@ -10,10 +10,10 @@ int ctrlSend(char *etherPort, uint8_t *inPayload, int payloadLen) {
 	int frame_Size = -1;
 
 	int sockfd;
-	struct ifreq if_idx;
+	struct ifreq if_idx; //ifreq points to array of active L3 interface address.It has if_name,if_addr and if_len.
 	struct ifreq if_mac;
 
-	char ifName[IFNAMSIZ];
+	char ifName[IFNAMSIZ]; //IFNAMSIZ 16
 
 	strcpy(ifName, etherPort);
 	frame_Size = HEADER_SIZE + payloadLen;
@@ -25,7 +25,7 @@ int ctrlSend(char *etherPort, uint8_t *inPayload, int payloadLen) {
 
 	struct sockaddr_ll socket_address;
 
-	// Open RAW socket to send on
+	// Open RAW socket to send on //sockfd is file descriptor.
 	if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
 		perror("Socket Error");
 	}
@@ -48,6 +48,25 @@ int ctrlSend(char *etherPort, uint8_t *inPayload, int payloadLen) {
 	 *  2 bytes - EtherType
 	 *
 	 */
+
+	/* struct ifreq {
+    char ifr_name[IFNAMSIZ];  Interface name
+    union {
+        struct sockaddr ifr_addr;
+        struct sockaddr ifr_dstaddr;
+        struct sockaddr ifr_broadaddr;
+        struct sockaddr ifr_netmask;
+        struct sockaddr ifr_hwaddr;
+        short           ifr_flags;
+        int             ifr_ifindex;
+        int             ifr_metric;
+        int             ifr_mtu;
+        struct ifmap    ifr_map;
+        char            ifr_slave[IFNAMSIZ];
+        char            ifr_newname[IFNAMSIZ];
+        char           *ifr_data;
+    };
+};*/
 
 	eh->ether_shost[0] = ((uint8_t *) &if_mac.ifr_hwaddr.sa_data)[0];
 	eh->ether_shost[1] = ((uint8_t *) &if_mac.ifr_hwaddr.sa_data)[1];
@@ -90,6 +109,8 @@ int ctrlSend(char *etherPort, uint8_t *inPayload, int payloadLen) {
 	if (sendto(sockfd, frame, frame_Size, 0, (struct sockaddr*) &socket_address, sizeof(struct sockaddr_ll)) < 0) {
 		printf("ERROR: Send failed\n");
 	}
+	/*ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen);*/
 
 	free(eh);
 	close(sockfd);

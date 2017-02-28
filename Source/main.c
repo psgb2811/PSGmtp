@@ -37,13 +37,13 @@
 
 /* Function Prototypes */
 void mtp_start();
-int getActiveInterfaces(char **);
-void learn_active_interfaces();
-bool checkInterfaceIsActive(char *);
+int getActiveInterfaces(char **);  /// used often -seems to do all the operations required to learn interfaces
+void learn_active_interfaces();  // used in main only once on startup
+bool checkInterfaceIsActive(char *);  // not used - comment by NS
 // *** added by NS
 void sig_handler(int signo); 
 // *** End addition by NS
-
+struct ether_addr *temp_switch_id;//added by Rajesh and Guru
 
 /* Globals */
 bool isRoot = false;
@@ -146,6 +146,8 @@ void mtp_start() {
 	// time_t, timers for checking hello time.
 	time_t time_advt_beg;
 	time_t time_advt_fin;
+	time_t time_current; // NS adds to record time of receiving frames from host
+	uint8_t *payload = NULL;
 
 	// clear the memory
 	interfaceNames = (char**) calloc (MAX_INTERFACES* MAX_INTERFACES, sizeof(char));
@@ -158,7 +160,8 @@ void mtp_start() {
 	}
 
 	// Create Socket, ETH_ is used because we are listening packets of all kinds.
-	if ((sockData = socket(AF_PACKET, SOCK_RAW, htons (ETH_P_ARP))) < 0) {
+	if ((sockData = socket(AF_PACKET, SOCK_RAW, htons (ETH_P_IP))) < 0) {
+		// NS changed ETH_P_ARP to ETH_P_IP - will look into all IP packets
 		perror("Error: MTP socket()");
 		exit(1);
 	}
@@ -173,8 +176,9 @@ void mtp_start() {
 		time(&time_advt_fin);
 		// Send Hello Periodic, only if have atleast One VID in Main VID Table.
 		if ((double)(difftime(time_advt_fin, time_advt_beg) >= PERIODIC_HELLO_TIME)) {
+			//printf("Time to send hello message\n");
 			memset(interfaceNames, '\0', sizeof(char) * MAX_INTERFACES * MAX_INTERFACES);
-			int numberOfInterfaces = getActiveInterfaces(interfaceNames);
+			int numberOfInterfaces = getActiveInterfaces(interfaceNames); // populates interfaceNames and returns a count
 
 			uint8_t *payload = NULL;
 			int payloadLen = 0;
@@ -193,6 +197,7 @@ void mtp_start() {
 				int i = 0;
 				for (; i < numberOfInterfaces; ++i) {			
 					ctrlSend(interfaceNames[i], payload, payloadLen);
+					
 				}
 			}
 			free(payload);
@@ -242,6 +247,7 @@ void mtp_start() {
 				print_entries_bkp_LL();                 // BKP VID TABLE
 				print_entries_cpvid_LL();               // CHILD PVID TABLE
 				print_entries_lbcast_LL();              // LOCAL HOST PORTS
+				printf("\n\n\n");
 			}
 			// reset time.
 			time(&time_advt_beg);
@@ -252,6 +258,7 @@ void mtp_start() {
 		recv_len = recvfrom(sockCtrl, recvBuffer, MAX_BUFFER_SIZE, MSG_DONTWAIT, (struct sockaddr*) &src_addr, &addr_len);
 		if (recv_len > 0) {
 			char recvOnEtherPort[5];
+			//printf("\nReceived a packet");
 			// read ethernet header
 			eheader = (struct ether_header*)recvBuffer;
 			//printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
@@ -265,13 +272,23 @@ void mtp_start() {
 			if ((strcmp(recvOnEtherPort, ctrlInterface)) == 0) {
 				continue;
 			} else {
-				// This is a MTP frame so, incase this port is in Local host broadcast table remove it.
+				//printf("\nReceived a MTP packet");
+				// This is an MTP frame so, incase this port is in Local host broadcast table remove it.
 				delete_entry_lbcast_LL(recvOnEtherPort); 
-			}
+				// add to control ports 
+				struct control_ports *new_node = (struct control_ports *) calloc(1, sizeof( struct control_ports));
 
+				strncpy(new_node->eth_name, recvOnEtherPort, strlen(recvOnEtherPort));
+				new_node->next = NULL; 
+				add_entry_control_table(new_node);
+				
+			}
+            // recvBuffer[0] to recvBuffer[13] has 6 bytes dest MAC address, 6 bytes src MAC address, 2 bytes type
 			switch ( recvBuffer[14] ) {
+				printf("\nChecking Type");
 				case MTP_TYPE_JOIN_MSG:
 					{
+						printf("\nType 1");
 						uint8_t *payload = NULL;
 						int payloadLen = 0;
 
@@ -290,7 +307,8 @@ void mtp_start() {
 					break;
 				case MTP_TYPE_PERODIC_MSG:
 					{
-						// printf ("MTP_TYPE_PERODIC_MSG\n");
+						
+						//printf ("MTP_TYPE_PERODIC_MSG\n");
 						// Record MAC ADDRESS, if not already present.
 						struct ether_addr src_mac;
 						bool retMainVID, retCPVID; 
@@ -493,6 +511,39 @@ void mtp_start() {
 						print_entries_lbcast_LL(); 
 					} 
 					break;
+				case MTP_HAAdvt_TYPE: {
+					// this section updated on 31st OCT 2016
+					printf ("\n\nReceived MTP_HAAdvt_TYPE Message \n"); 
+					struct Host_Address_tuple *HAT = (struct Host_Address_tuple *) calloc (1, sizeof (struct Host_Address_tuple)); 
+					uint8_t mac_addr [6];
+  					mac_addr[0] = recvBuffer[17];
+  					mac_addr[1] = recvBuffer[18];
+  					mac_addr[2] = recvBuffer[19];
+  					mac_addr[3] = recvBuffer[20];
+  					mac_addr[4] = recvBuffer[21];
+  					mac_addr[5] = recvBuffer[22];
+  					// all the information in the message is in recvBuffer - just to check
+					print_HAAdvt_message_content(recvBuffer);
+
+					strncpy(HAT->eth_name, recvOnEtherPort, strlen(recvOnEtherPort));	// record the port on whch the control frame arrived				
+					HAT->path_cost = (uint8_t) recvBuffer [15] + 1; // have to fix this - after finding the cost at the interface
+					HAT->sequence_number = (uint8_t) recvBuffer [15]; 
+					// have to fix - the sequence number increments if the switch wishes to send a triggered update on changed information 
+				
+					memcpy(&HAT->mac, (struct ether_addr *) mac_addr, sizeof(struct ether_addr));  
+						
+					HAT->local = FALSE;  
+						
+					HAT->next = NULL;
+					printf("started copying");
+					// Update Host Address Table 
+					if (add_entry_HAT_LL (HAT)) {
+							printf("completed HAA ");
+							print_entries_HAT_LL();
+							// if changed - send another update on the control ports
+						}
+				}
+				break;
 				default:
 					printf("Unknown Packet\n");
 					break;	
@@ -501,6 +552,7 @@ void mtp_start() {
 
 		/* Receive data traffic */
 		recv_len = recvfrom(sockData, recvBuffer, MAX_BUFFER_SIZE, MSG_DONTWAIT, (struct sockaddr*) &src_addr, &addr_len);
+		
 		if (recv_len > 0) {
 			char recvOnEtherPort[5];
 
@@ -509,24 +561,26 @@ void mtp_start() {
 
 			// ignore frames that are from the control interface.
 			if ((strcmp(recvOnEtherPort, ctrlInterface)) == 0) {
+				//printf("\nIt is a control frame");
 				continue;
 			}
-
+			printf("\nIgnored control frame");
 			// read ethernet header
 			eheader = (struct ether_header*)recvBuffer;
 
 			// read ethernet header
-			/*printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
+			printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
 			  printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
-			  printf("Message Type: %x\n", ntohs(eheader->ether_type));*/
+			  printf("Message Type: %x\n", ntohs(eheader->ether_type));
 
 			// Check if the data frame is a broadcast.
 			if (strncmp(ether_ntoa((struct ether_addr *)&eheader->ether_dhost), "ff:ff:ff:ff:ff:ff", 17) == 0) {
 				// if the frame is a broadcast frame.
 				printf("Received broadcast frame\n");
+				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
 
 				// Send it to all host ports, first.
-				struct local_bcast_tuple* current =  getInstance_lbcast_LL();
+				struct local_bcast_tuple* current =  getInstance_lbcast_LL(); 
 
 				for (; current != NULL; current = current->next) {
 					// port should not be the same from where it received frame.
@@ -557,6 +611,70 @@ void mtp_start() {
 				}
 				//print_entries_cpvid_LL();
 			} 
+			// NS added the following to collect data on host MAC address and ports
+			else if (strncmp(ether_ntoa((struct ether_addr *)&eheader->ether_dhost), "01:00:5e:00:00:01", 9) == 0)
+			{
+				//multicast address range is from 01:00:5e:00:00:00 to 01:00:5e:7f:ff:ff
+				// do not handle frames addressed to multicast destinations 
+				printf("Received on port %s a multicast frame \n", recvOnEtherPort); 
+				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
+				break; 
+
+			}
+
+			else { // unicast frame 
+				
+				printf("\n\nReceived a non-Bcast frame\n");
+				printf("Source MAC: %s\n", ether_ntoa((struct ether_addr *) &eheader->ether_shost));
+				printf("Destination MAC: %s\n", ether_ntoa((struct ether_addr *)&eheader->ether_dhost));
+				printf("Message Type: %x\n", ntohs(eheader->ether_type));
+				printf("Received on port %s\n", recvOnEtherPort); 
+				
+				struct control_ports* current =  getInstance_control_LL(); 
+				struct Host_Address_tuple *HAT = (struct Host_Address_tuple *) calloc (1, sizeof (struct Host_Address_tuple)); 
+				for (; current != NULL; current = current->next) {
+					// this a port from where the frame was received
+					if (strcmp(current->eth_name, recvOnEtherPort) == 0) {
+						strncpy(HAT->eth_name, current->eth_name, strlen(current->eth_name));	
+						//struct ether_addr *s_id 
+						HAT->switch_id = get_switchid(); //Guru and Rajesh
+						printf("Switch ID:%s\n",ether_ntoa((struct ether_addr*)&HAT->switch_id->ether_addr_octet));
+						HAT->path_cost = PATH_COST; // starts with path cost 0 as this is the local port 
+						HAT->sequence_number = SEQUENCE_NUMBER; // starts with sequence number 0 as this is the local port 
+						memcpy(&HAT->mac, (struct ether_addr*)&eheader->ether_shost, sizeof(struct ether_addr)); 
+						HAT->local = TRUE;  
+						// #####NS include current time 
+						time(&(HAT->time_current));
+						HAT->next = NULL;
+						printf("\nCompleted copying\n");
+						
+
+						
+						if (add_entry_HAT_LL (HAT)) {
+							print_entries_HAT_LL();
+
+							payload = (uint8_t *)calloc (1, MAX_BUFFER_SIZE);
+							int PayloadSize;
+							PayloadSize = build_HAAdvt_message(payload, HAT->mac, HAT->path_cost, HAT->sequence_number);
+							printf("\n\n********** Built payload of size %d ***********\n", PayloadSize);
+							memset(interfaceNames, '\0', sizeof(char) * MAX_INTERFACES * MAX_INTERFACES);
+							int numberOfInterfaces = getActiveInterfaces(interfaceNames);
+							printf("********** Number of Interfaces %d ***********\n\n", numberOfInterfaces);
+							int i = 0;
+				            
+							for (; i < numberOfInterfaces; i++){
+								if( strcmp(interfaceNames[i], recvOnEtherPort) != 0 ){
+									// there could be more than this rceived port that are local - should get all local ports
+									// and send control message only on the control ports 
+									printf("Sending HAAdvt on port %s\n", interfaceNames[i]);
+									ctrlSend( interfaceNames[i], payload, PayloadSize );															
+								} 
+							}   
+						}	// to add the MAC address in the HAT 
+					} // if to check if the receiver port is the same as the one in the lbcast table 
+				} // lbcast adddress for loop to check all ends
+				
+			}  // else non-bcast ends 
 
 		}
 		// check if there are any pending VID Adverts
