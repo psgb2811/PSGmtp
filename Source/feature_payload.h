@@ -36,7 +36,7 @@
 #define VID_ADD			            1
 #define VID_DEL			            2
 
-#define PVID_PORT 		          1 
+#define PVID_PORT 		          1
 #define NON_PVID_PORT		        2
 
 #define PATH_COST		            0
@@ -44,7 +44,7 @@
 
 #define PERIODIC_HELLO_TIME	    2.0
 #define TRUE                    1
-#define FALSE                   0 
+#define FALSE                   0
 
 /* Type of Ports */
 #define MTP_PORT                1
@@ -98,13 +98,13 @@ struct control_ports {
 
 /* NS Adds - Host Address Table */
 struct Host_Address_tuple {
-	struct ether_addr *switch_id;
+	struct ether_addr *switch_id; //switch id - mac id of the lowest interface
   char eth_name[ETH_ADDR_LEN];          // Port of access for host
   uint8_t path_cost;		// path cost to reach host.
-  struct ether_addr mac;   // MAC address of host 
+  struct ether_addr mac;   // MAC address of host
   bool local;  // if the host is local this flag will be set to true - else false
   uint8_t sequence_number; // 26 Sept 2016
-  time_t time_current; 
+  time_t time_current;
   struct Host_Address_tuple *next;
 };
 
@@ -149,14 +149,14 @@ struct local_bcast_tuple* getInstance_lbcast_LL();
 bool add_entry_HAT_LL(struct Host_Address_tuple *);
 bool find_entry_HAT_LL(struct Host_Address_tuple *);
 void print_entries_HAT_LL();
-int build_HAAdvt_message(uint8_t *, struct ether_addr, uint8_t, uint8_t);
+int build_HAAdvt_message(uint8_t *, struct ether_addr, uint8_t, uint8_t, struct ether_addr *);
 void print_HAAdvt_message_content(uint8_t *);
 
 /* function prototypes for control ports table */
 struct control_ports* getInstance_control_LL();
 bool add_entry_control_table(struct control_ports *);
 bool find_entry_control_table(struct control_ports  *);
-void print_entries_control_table(); 
+void print_entries_control_table();
 struct ether_addr* get_switchid();
 
 
