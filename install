@@ -1,7 +1,14 @@
 sudo pkill mtpd
 sudo pkill bcast
+sudo pkill bcast_send
+sudo pkill ucast3
+sudo pkill ucast4
+sudo pkill ucast5
 rm -rf bin
 mkdir bin
 gcc Source/*.c -o bin/mtpd
 gcc Bcast/bcast.c -o bin/bcast
-
+gcc Bcast/bcast_send.c -o bin/bcast_send
+gcc Ucast/ucast3.c -o bin/ucast3
+gcc Ucast/ucast4.c -o bin/ucast4
+gcc Ucast/ucast5.c -o bin/ucast5
