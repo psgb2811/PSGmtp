@@ -125,6 +125,7 @@ int dataSend(char *etherPort, uint8_t *inPayload, int payloadLen) {
     printf("ERROR: Send failed\n");
   }
 
+  printf("\nData Frame sent.\n");
   close(sockfd);
   return 0;
 }

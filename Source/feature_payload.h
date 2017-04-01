@@ -30,6 +30,7 @@
 #define MTP_TYPE_PERODIC_MSG   	2
 #define MTP_TYPE_VID_ADVT	      3
 #define MTP_HAAdvt_TYPE           4
+#define PING                      5
 
 #define MAX_MAIN_VID_TBL_PATHS  3
 
@@ -50,6 +51,13 @@
 #define MTP_PORT                1
 #define HOST_PORT               2
 
+/* Type of return messages from find funciton */
+#define NEW_ENTRY				0
+#define ENTRY_PRESENT			1
+#define DIFFERENT_SWITCH_ID 	2
+#define LOCAL_HOST       		3
+
+
 /* Container for VID Table */
 struct vid_addr_tuple {
 	char eth_name[ETH_ADDR_LEN]; 	// Port of Acquisition
@@ -58,7 +66,7 @@ struct vid_addr_tuple {
 	int port_status;		// Port Type i.e. PVID, MTP
 	int isNew;
 	struct vid_addr_tuple *next;
-	uint8_t path_cost;		// VID path cost.
+	int path_cost;		// VID path cost.
 	struct ether_addr mac;
 	int membership;			// Membership PRIMARY, SECONDARY, TERTIARY
 };
@@ -96,11 +104,19 @@ struct control_ports {
   struct control_ports *next;
 };
 
+struct path_cost_tuple {
+  char eth_name[ETH_ADDR_LEN];
+  int path_cost;          //  port Name
+  struct path_cost_tuple *next;
+};
+
+
 /* NS Adds - Host Address Table */
 struct Host_Address_tuple {
+    // RVP why pointer here, i feel like you should keep the same type as of mac
 	struct ether_addr *switch_id; //switch id - mac id of the lowest interface
   char eth_name[ETH_ADDR_LEN];          // Port of access for host
-  uint8_t path_cost;		// path cost to reach host.
+  int path_cost;		// path cost to reach host.
   struct ether_addr mac;   // MAC address of host
   bool local;  // if the host is local this flag will be set to true - else false
   uint8_t sequence_number; // 26 Sept 2016
@@ -147,10 +163,27 @@ struct local_bcast_tuple* getInstance_lbcast_LL();
 
 /* Function prototypes for Host Address Table  */
 bool add_entry_HAT_LL(struct Host_Address_tuple *);
-bool find_entry_HAT_LL(struct Host_Address_tuple *);
+int find_entry_HAT_LL(struct Host_Address_tuple *);
 void print_entries_HAT_LL();
 int build_HAAdvt_message(uint8_t *, struct ether_addr, uint8_t, uint8_t, struct ether_addr *);
 void print_HAAdvt_message_content(uint8_t *);
+int find_port_arrival(struct Host_Address_tuple *);
+bool add_entry_bkp_HAT_LL(struct Host_Address_tuple *);
+void print_bkp_entries_HAT_LL();
+bool compare_path_cost(struct Host_Address_tuple *);
+bool update_main_HAT_LL(struct Host_Address_tuple *);
+bool update_bkp_HAT_LL(struct Host_Address_tuple *);
+bool compare_seq_99(struct Host_Address_tuple *);
+void delete_entry_HAT_LL(struct Host_Address_tuple *);
+void delete_entry_bkp_HAT_LL(struct Host_Address_tuple *);
+bool check_dest_mac(uint8_t *, struct ether_header *, int );
+bool check_local_port(int ,struct ether_header *);
+
+void add_path_cost(struct path_cost_tuple *);
+int find_path_cost(char *);
+bool find_path_cost_LL(struct path_cost_tuple *);
+void print_path_cost_table ();
+
 
 /* function prototypes for control ports table */
 struct control_ports* getInstance_control_LL();
@@ -158,6 +191,8 @@ bool add_entry_control_table(struct control_ports *);
 bool find_entry_control_table(struct control_ports  *);
 void print_entries_control_table();
 struct ether_addr* get_switchid();
+bool check_control_inf(char *);
+void delete_control_port_LL(char *);
 
 
 

@@ -7,7 +7,9 @@ struct vid_addr_tuple *main_vid_tbl_head = NULL;
 struct child_pvid_tuple *cpvid_tbl_head = NULL;
 struct local_bcast_tuple *local_bcast_head = NULL;
 struct Host_Address_tuple *HAT_head = NULL;
+struct Host_Address_tuple *HAT_bkp_head = NULL;
 struct control_ports *control_ports_head = NULL;
+struct path_cost_tuple *path_cost_head = NULL;
 
 /*
  *   isChild() - This method checks if the input VID param is child of any VID in Main
@@ -85,7 +87,8 @@ int  build_VID_ADVT_PAYLOAD(uint8_t *data, char *interface) {
     char vid_addr[VID_ADDR_LEN];
 
     // <PATH COST> - Taken as '1' for now
-    data[payloadLen] = (uint8_t) (current->path_cost + 1);
+    printf("\nIn VID Advt, Received Path Cost:%d, Interface Cost:%d\n",current->path_cost,find_path_cost(interface));
+    data[payloadLen] = (uint8_t) (current->path_cost + find_path_cost(interface)); //path cost according to the port received.
 
     // next byte
     payloadLen = payloadLen + 1;
@@ -873,23 +876,36 @@ struct local_bcast_tuple* getInstance_lbcast_LL() {
 
 /* NS adds code for populating Host Address Table */
 bool add_entry_HAT_LL(struct Host_Address_tuple *HAT) {
-	printf("\nEntered adding section\n");
+	printf("\nEntered add_entry_HAT_LL\n");
   if (HAT_head == NULL) {
     HAT_head = HAT;  // update local variable with the passed variable - first time this will be true
   } else {
-    if (!find_entry_HAT_LL(HAT)) {  // second time onwards this will be true
       //printf(" In ADD HAT enrty \n  " );
       HAT->next = HAT_head;
       HAT_head = HAT;  // what is happening here - the entry is being added
-    }
+
   }
   printf("\nCompleted HAA entry section\n");
 }
 
-bool find_entry_HAT_LL(struct Host_Address_tuple *node) {
+bool add_entry_bkp_HAT_LL(struct Host_Address_tuple *HAT) { //This function populates the HAT backup table.
+    printf("\nEntered backup adding section\n");
+  if (HAT_bkp_head == NULL) {
+    HAT_bkp_head = HAT;  // update local variable with the passed variable - first time this will be true
+  } else {
+      //printf(" In ADD HAT enrty \n  " );
+      HAT->next = HAT_bkp_head;
+      HAT_bkp_head = HAT;  // what is happening here - the entry is being added
+
+  }
+  printf("\nCompleted HAA backup entry section\n");
+}
+
+int find_entry_HAT_LL(struct Host_Address_tuple *node) { //This function finds the entry and returns the appropriate value according to the check condition.
   struct Host_Address_tuple *current = HAT_head;
   uint8_t mac_addr [6];
   uint8_t byte_number;
+  int i;
 
   if (current != NULL) {
     //printf(" In Locating HAT enrty - first step\n  " );
@@ -897,19 +913,40 @@ bool find_entry_HAT_LL(struct Host_Address_tuple *node) {
       //printf(" In Locating HAT enrty - second step\n  " );
       for (byte_number=0; byte_number< 6; byte_number++)
       {
-        printf ("byte number =%d, in table mac octet = %d, in node mac octet = %d   \n", byte_number, current->mac.ether_addr_octet[byte_number], node->mac.ether_addr_octet[byte_number]);
-        if (current->mac.ether_addr_octet[byte_number] != node->mac.ether_addr_octet[byte_number])
+        //printf ("byte number =%d, in table mac octet = %d, in node mac octet = %d   \n", byte_number, current->mac.ether_addr_octet[byte_number], node->mac.ether_addr_octet[byte_number]);
+        if (current->mac.ether_addr_octet[byte_number] != node->mac.ether_addr_octet[byte_number]) //compares the mac values
           break;
       }
-      if (byte_number ==6) {
 
-      printf(" \nIn Locating HAT entry found a match. Nothing will be added.\n  " );
-        return true;
+      // MAC address is same, hence comparing switch id.
+      if (byte_number ==6) {
+        printf(" \nIn Locating HAT entry found a match. Nothing will be added. Time is updated\n  " );
+        time(&(current->time_current));
+        for (i=0;i<6;i++) {
+            if (node->switch_id->ether_addr_octet[i] != current->switch_id->ether_addr_octet[i]) {
+                printf("\nSwitch Id different. Updating Details. Incrementing Sequence number.\n");
+                strncpy(current->eth_name,node->eth_name,ETH_ADDR_LEN);
+                current->sequence_number++;
+                node->sequence_number++;
+                current->switch_id=node->switch_id;
+                current->local=FALSE;
+                current->path_cost=node->path_cost;
+                //if switch id is different, sequence number incremented and value returned.
+                return DIFFERENT_SWITCH_ID;
+            }
+        }
+        //same frame returned to the source since local variable is true.
+        if (current->local == TRUE) {
+          return LOCAL_HOST;
+        }
+        //if there is an entry with same host mac and switch id
+        return ENTRY_PRESENT;
       }
       current = current->next;
     }
   }
-  return false;
+  //if the entry is not present.
+  return NEW_ENTRY;
 }
 
 void print_entries_HAT_LL() {
@@ -922,6 +959,18 @@ void print_entries_HAT_LL() {
 	printf("%s\n",ether_ntoa((struct ether_addr*)&current->switch_id->ether_addr_octet));
  }
   printf("\n###################   End Host Address Table   ###############\n");
+}
+
+void print_bkp_entries_HAT_LL() {
+  struct Host_Address_tuple *current;
+  printf("\n###################   Backup Host Address Table   ###############\n");
+
+  for (current = HAT_bkp_head; current != NULL; current = current->next) {
+    printf("port name \t\t cost \t\t seq num \t\t mac\t\t local \t\t switch-id\n");
+	printf("%s\t\t\t%d\t\t%d\t\t%s\t\t%d\t\t", current->eth_name, current->path_cost,  current->sequence_number, ether_ntoa(&current->mac), current->local);
+	printf("%s\n",ether_ntoa((struct ether_addr*)&current->switch_id->ether_addr_octet));
+ }
+  printf("\n###################   End Backup Host Address Table   ###############\n");
 }
 
 int build_HAAdvt_message(uint8_t *data, struct ether_addr mac, uint8_t cost, uint8_t sequence_number, struct ether_addr *switch_id) {
@@ -993,6 +1042,17 @@ struct control_ports* getInstance_control_LL() {
   return control_ports_head;
 }
 
+bool check_control_inf(char *ptr) { //function checks whether it is a control port or not.
+struct control_ports *current;
+
+for (current = control_ports_head; current != NULL; current = current->next) {
+    if (!(strcmp(current->eth_name,ptr))) {
+        return true;
+    }
+    }
+return false;
+}
+
 bool add_entry_control_table(struct control_ports *node) {
   if (control_ports_head == NULL) {
     control_ports_head = node;
@@ -1004,6 +1064,89 @@ bool add_entry_control_table(struct control_ports *node) {
     }
   }
 }
+
+void delete_control_port_LL(char *port) {
+  struct control_ports *current = control_ports_head;
+  struct control_ports *previous = NULL;
+
+
+  //printf("%s deleted from local host table value of \n",current->eth_name);
+  while (current != NULL) {
+    if (strcmp(current->eth_name, port) == 0) {
+      if (current == control_ports_head) {
+        control_ports_head = current->next;
+        free(current);
+        current = control_ports_head;
+        previous = NULL;
+        continue;
+      } else {
+        struct control_ports *temp = current;
+        current = current->next;
+        previous->next = current;
+        free(temp);
+        continue;
+      }
+
+    }
+    previous = current;
+    current = current->next;
+  }
+  //print_entries_lbcast_LL();
+
+}
+
+void add_path_cost(struct path_cost_tuple *node) { //This function adds interface path cost entry to the LL
+  if (path_cost_head == NULL) { //procedure is similar to other LL.
+    path_cost_head = node;
+  } else {
+    if (!find_path_cost_LL(node)) {
+      node->next = path_cost_head;
+      path_cost_head = node;
+      print_path_cost_table ();
+    }
+  }
+}
+
+int find_path_cost(char *ptr) { //This function receives the interface and returns the path cost of it.
+struct path_cost_tuple *current;
+
+for (current = path_cost_head; current != NULL; current = current->next) {
+    if (!(strcmp(current->eth_name,ptr))) {
+        return current->path_cost;
+    }
+    }
+return 100; //value set for dummy. This case doesn't occer.
+}
+
+void print_path_cost_table() { //This function prints the path cost of respective interfaces.
+  struct path_cost_tuple *current;
+
+
+  printf("\n#######Path Cost Table#########\n");
+
+  for (current = path_cost_head; current != NULL; current = current->next) {
+    printf("%s\t%d\n", current->eth_name,current->path_cost);
+  }
+}
+
+bool find_path_cost_LL(struct path_cost_tuple  *node) { //This function finds the entry in the LL.
+  struct path_cost_tuple  *current = path_cost_head;
+
+  if (current != NULL) {
+
+    while (current != NULL) {
+
+      if (strcmp(current->eth_name, node->eth_name) == 0) {
+        return true; // Returns true if found.
+      }
+
+      current = current->next;
+    }
+  }
+
+  return false; //Returns false if not found.
+}
+
 
 /**
  *    Find entries in the local host broadcast Table.
@@ -1051,7 +1194,7 @@ void print_entries_control_table() {
   }
 }
 
-struct ether_addr* get_switchid() //created by Guru and Rajesh
+struct ether_addr* get_switchid() //created by Guru and Rajesh - function returns the switch id, which is the lowest mac address among the interface.
 {
 	struct control_ports *current;
 	int fd,i=0,j,k,flag=0;
@@ -1062,13 +1205,13 @@ struct ether_addr* get_switchid() //created by Guru and Rajesh
 	for (current = control_ports_head; (current != NULL || flag!=1); current = current->next){
 		if(current==NULL && flag ==0){
 			current = (struct control_ports *) local_bcast_head;
-			printf("\n%s\n",current->eth_name);
+			//printf("\n%s\n",current->eth_name);
 			flag=1;
 		}
 		struct ether_addr *mac = (struct ether_addr *) calloc (1, sizeof (struct ether_addr));
 		iface=current->eth_name;
 		//printf("\nFlag:%d\t%s\n",flag,current->eth_name);
-		print_entries_lbcast_LL();
+		//print_entries_lbcast_LL();
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -1110,3 +1253,360 @@ struct ether_addr* get_switchid() //created by Guru and Rajesh
 	return temp_mac;
 
 }
+
+int find_port_arrival(struct Host_Address_tuple *node) //function returns the value for port of arrival check from HAT list.
+{
+  struct Host_Address_tuple *current;
+  int flag=0;
+
+    for (current = HAT_head; current != NULL; current = current->next)
+    {
+			if((!(strcmp(current->eth_name,node->eth_name)))&&(memcmp(&node->mac, &current->mac, sizeof(struct ether_addr)) == 0))
+			{
+                    flag=1;
+                    break;
+            }
+    }
+    return flag;
+}
+
+bool compare_path_cost (struct Host_Address_tuple *node) { //function checks for lower path cost or greater.
+
+struct Host_Address_tuple *current = HAT_head;
+  uint8_t mac_addr [6];
+  uint8_t byte_number;
+
+  printf("\nStarted Comparing Path Cost,\n");
+
+  if (current != NULL) {
+    //printf(" In Locating HAT enrty - first step\n  " );
+    while (current != NULL) {
+      //printf(" In Locating HAT enrty - second step\n  " );
+      for (byte_number=0; byte_number< 6; byte_number++)
+      {
+        //printf ("byte number =%d, in table mac octet = %d, in node mac octet = %d   \n", byte_number, current->mac.ether_addr_octet[byte_number], node->mac.ether_addr_octet[byte_number]);
+        if (current->mac.ether_addr_octet[byte_number] != node->mac.ether_addr_octet[byte_number])
+          break;
+      }
+      if (byte_number ==6) {
+
+      if(node->path_cost >= current->path_cost)
+        return true; //returns 1 if new node has greater cost than current node, else returns 0.
+      }
+      current = current->next;
+    }
+  }
+  return false;
+
+}
+
+bool update_main_HAT_LL(struct Host_Address_tuple *node) { //function updates and reorders the HAT main table.
+    struct Host_Address_tuple *current = HAT_head;
+  struct Host_Address_tuple *previous = NULL;
+  bool hasUpdate = false;
+
+  while (current != NULL) {
+    if (memcmp(&node->mac, &current->mac, sizeof(struct ether_addr)) == 0) {
+        printf("\nEntry found in main table in updating.\n"); //if entry is found in HAT table, it has to be checked with backup table.
+      update_bkp_HAT_LL(current); //pass to backup table checking.
+
+      struct Host_Address_tuple *temp = current;
+
+      if (previous == NULL) {
+        HAT_head = current->next;
+      } else {
+        previous->next = current->next;
+      }
+
+      current = current->next;
+      free(temp); //delete that entry from the table since new entry is added.
+      add_entry_HAT_LL(node);
+      printf("\nUpdated Successfully in main HAT table.\n");
+      hasUpdate = true;
+      continue;
+    }
+    previous = current;
+    current = current->next;
+  }
+  return hasUpdate;
+  printf("\nUpdation process completed in main table.\n");
+}
+
+bool update_bkp_HAT_LL(struct Host_Address_tuple *node) { //This function reorders and updates the backup table.
+    struct Host_Address_tuple *current = HAT_bkp_head;
+  struct Host_Address_tuple *previous = NULL;
+  bool hasUpdate = false;
+  int flag = 0;
+
+  if (current != NULL) {
+        printf("\nSome entries are present in bkp table.\n");
+  while (current != NULL) {
+    if (memcmp(&node->mac, &current->mac, sizeof(struct ether_addr)) == 0) {
+
+         printf("\nThe particular Entry is present in bkp table. Checking for path cost\n");
+         flag=1;
+        if (current->path_cost > node->path_cost) {
+
+      struct Host_Address_tuple *temp = current;
+
+      if (previous == NULL) {
+        HAT_bkp_head = current->next;
+      } else {
+        previous->next = current->next;
+      }
+
+      current = current->next;
+      free(temp); //deleting the entry for new addition.
+      add_entry_bkp_HAT_LL(node);
+      printf("\nUpdated Successfully in bkp HAT table due to low path cost.\n");
+      hasUpdate = true;
+      continue;
+    }
+    else
+        printf("\nEntry Discarded in Backup table due to higher path cost.\n");
+
+    }
+
+    previous = current;
+    current = current->next;
+  }
+  if (flag == 0) {
+    add_entry_bkp_HAT_LL(node);
+    hasUpdate = true;
+    printf("\nThat entry is not present. So added as first backup path for that mac address.\n");
+    }
+  }
+  else {
+    add_entry_bkp_HAT_LL(node);
+    hasUpdate = true;
+    printf("\nThis is the first entry in the bkp table since the table is empty. Have to add the entry in bkp table.\n");
+  }
+
+  printf("\nCompleted Backup update process.\n");
+  return hasUpdate;
+}
+
+bool compare_seq_99(struct Host_Address_tuple *node) { //This function compares the sequence number.
+
+struct Host_Address_tuple *current;
+struct Host_Address_tuple *bkpcurrent;
+int flag=0;
+bool hasUpdate = false;
+
+for (current = HAT_head; current != NULL; current = current->next) {
+    if (memcmp(&node->mac, &current->mac, sizeof(struct ether_addr)) == 0) {
+        if (node->sequence_number > current->sequence_number) { //Checks for higher sequence number for recent entry.
+            if (node->path_cost < 99) { //check for path cost 99.
+                if (node->path_cost <= current->path_cost) {
+                    current = node;
+                    hasUpdate = true;
+                    printf("\nHAT entry with same details but greater sequence number and same of less path cost. So update in main table.\n");
+                    print_entries_HAT_LL();
+                }
+                else { //Now checking in backup table with path cost for updating.
+                    for (bkpcurrent = HAT_bkp_head; bkpcurrent != NULL; bkpcurrent = bkpcurrent->next) {
+                            flag = 2;
+                        if (memcmp(&node->mac, &bkpcurrent->mac, sizeof(struct ether_addr)) == 0) {
+                                flag = 1;
+                            if (node->path_cost > bkpcurrent->path_cost) {
+                                current = bkpcurrent; //promoting the backup as main entry.
+                                bkpcurrent = node; //adding the new information as backup.
+                                hasUpdate = true;
+                                printf("\nNew is higher than lowest backup entry. Hence the entries are swapped\n");
+                            }
+                        else {
+                            current=node; //entry updated in main table itself.
+                            hasUpdate = true;
+                            printf("\nNew entry is lower or same than the lowest entry in backup. Hence main entry is updated,\n");
+                        }
+                      }
+
+                    }//for
+                    if (flag != 1) {//if no backup entry, then add in main table.
+                        current = node;
+                        hasUpdate = true;
+                    }
+                    //else if (flag == 2)
+                        //bkpcurrent = node;
+
+                    printf("\nNew entry with same details checked in both main and backup table and updated accordingly.\n");
+                    print_entries_HAT_LL();
+                    print_bkp_entries_HAT_LL();
+                }
+            }
+            else { //if cost 99 reached,
+                flag = 0;
+                printf("\nCost reached value 99. So removing entry from the list. And updating from backup.\n");
+                for (bkpcurrent = HAT_bkp_head; bkpcurrent != NULL; bkpcurrent = bkpcurrent->next) {
+                    if (memcmp(&node->mac, &bkpcurrent->mac, sizeof(struct ether_addr)) == 0) {
+                        flag = 1;
+                        current = bkpcurrent; //promote the backup entry to main table.
+                        hasUpdate = true;
+                        delete_entry_bkp_HAT_LL(bkpcurrent); //and delete it.
+                        printf("\nBackup entry transfered to main HAT entry.\n");
+                    }
+
+                }
+                if (flag == 0) {
+                delete_entry_HAT_LL(node); //if no entry in backup also, delete from main entry itself.
+                hasUpdate = true;
+                printf("\nNo entry found in Backup table also. So the entry is completely removed from main table.\n");
+                }
+           }//99 path cost else
+        }//sequence check if
+    }//HAT mac match in main entry
+
+}//main table for loop
+return hasUpdate;
+}
+
+//delete from backup linked list.
+ void delete_entry_bkp_HAT_LL(struct Host_Address_tuple *node) {
+
+   struct Host_Address_tuple *bkpcurrent = HAT_bkp_head;
+    struct Host_Address_tuple *previous = NULL;
+    while (bkpcurrent != NULL) {
+        if (memcmp(&node->mac, &bkpcurrent->mac, sizeof(struct ether_addr)) == 0) {
+            if (bkpcurrent == HAT_bkp_head) {
+                HAT_bkp_head = bkpcurrent->next;
+                free(bkpcurrent);
+                bkpcurrent = HAT_bkp_head;
+                previous = NULL;
+                continue;
+            } else {
+                struct Host_Address_tuple *temp = bkpcurrent;
+                bkpcurrent = bkpcurrent->next;
+                previous->next = bkpcurrent;
+                free(temp);
+                continue;
+            }
+        }
+        previous = bkpcurrent;
+        bkpcurrent = bkpcurrent->next;
+    }
+
+ }
+
+ void delete_entry_HAT_LL(struct Host_Address_tuple *node) { //delete from main HAT LL.
+
+    struct Host_Address_tuple *current = HAT_head;
+    struct Host_Address_tuple *previous = NULL;
+    while (current != NULL) {
+      if (memcmp(&node->mac, &current->mac, sizeof(struct ether_addr)) == 0) {
+          if (current == HAT_head) {
+              HAT_head = current->next;
+              free(current);
+              current = HAT_head;
+              previous = NULL;
+              continue;
+          } else {
+              struct Host_Address_tuple *temp = current;
+              current = current->next;
+              previous->next = current;
+              free(temp);
+              continue;
+          }
+      }
+      previous = current;
+      current = current->next;
+    }
+
+ }
+
+ //check if the mac is already in HAT table.
+ bool check_dest_mac(uint8_t *rx_buffer, struct ether_header *head, int recv_len) {
+
+   struct Host_Address_tuple *current;
+
+   for (current = HAT_head; current != NULL; current = current->next) {
+        if (memcmp(&head->ether_dhost, &current->mac, sizeof(struct ether_addr)) == 0) { //if entry found,
+                 printf("\nReceived a unicast Data Frame, Entry found in HAT table. Hence forwarding it to port: %s .\n",current->eth_name);
+                 dataSend(current->eth_name, rx_buffer, recv_len);//send the data frame.
+                 return TRUE;
+
+        }
+   }
+   return FALSE;
+
+ }
+
+ bool check_local_port(int number_if,struct ether_header *head)
+ {
+	struct control_ports *current;
+	int fd,i=0,j,k,flag=0;
+    struct ifreq ifr;
+    char *iface;
+    struct ether_addr *temp_mac;
+
+	for (current = control_ports_head; (current != NULL || flag!=1); current = current->next){
+		if(current==NULL && flag ==0){
+			current = (struct control_ports *) local_bcast_head;
+			//printf("\n%s\n",current->eth_name);
+			flag=1;
+		}
+
+		iface=current->eth_name;
+		//printf("\nFlag:%d\t%s\n",flag,current->eth_name);
+		//print_entries_lbcast_LL();
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    ifr.ifr_addr.sa_family = AF_INET;
+    strncpy(ifr.ifr_name , iface , IFNAMSIZ-1);
+
+    ioctl(fd, SIOCGIFHWADDR, &ifr);
+
+    close(fd);
+
+    temp_mac = (struct ether_addr *)ifr.ifr_hwaddr.sa_data;
+    //printf("Mac : %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n" , temp_mac->ether_addr_octet[0], temp_mac->ether_addr_octet[1], temp_mac->ether_addr_octet[2], temp_mac->ether_addr_octet[3], temp_mac->ether_addr_octet[4], temp_mac->ether_addr_octet[5]);
+    /*i++;
+    //printf("Mac : %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n" , temp_mac[i-1]->ether_addr_octet[0], temp_mac[i-1]->ether_addr_octet[1], temp_mac[i-1]->ether_addr_octet[2], temp_mac[i-1]->ether_addr_octet[3], temp_mac[i-1]->ether_addr_octet[4], temp_mac[i-1]->ether_addr_octet[5]);
+
+	}
+     printf("\nBefore Mac\n");
+     printf("Mac : %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n" , temp_mac[0]->ether_addr_octet[0], temp_mac[0]->ether_addr_octet[1], temp_mac[0]->ether_addr_octet[2], temp_mac[0]->ether_addr_octet[3], temp_mac[0]->ether_addr_octet[4], temp_mac[0]->ether_addr_octet[5]);
+     printf("Mac : %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n" , temp_mac[1]->ether_addr_octet[0], temp_mac[1]->ether_addr_octet[1], temp_mac[1]->ether_addr_octet[2], temp_mac[1]->ether_addr_octet[3], temp_mac[1]->ether_addr_octet[4], temp_mac[1]->ether_addr_octet[5]);
+     printf("Mac : %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n" , temp_mac[2]->ether_addr_octet[0], temp_mac[2]->ether_addr_octet[1], temp_mac[2]->ether_addr_octet[2], temp_mac[2]->ether_addr_octet[3], temp_mac[2]->ether_addr_octet[4], temp_mac[2]->ether_addr_octet[5]);
+    //printf("\nInf value: %d\n",number_if);
+	for (j=0;j<number_if;j++)
+    {
+        printf("\nEntered Main For loop.\n");*/
+        for (k=0;k<6;k++)
+        {
+            //printf("\nEntered Checking For loop.\n");
+            //printf("Comparing : %.2x:%.2x \n" , head->ether_dhost[k], temp_mac->ether_addr_octet[k]);
+            //printf("\nj value: %d, k value: %d\n",j,k);
+            if (head->ether_dhost[k] != temp_mac->ether_addr_octet[k])
+                break;
+        }
+
+        if (k==6)
+        {
+         printf("\nReturning True\n");
+         return TRUE;
+        }
+    }
+    /*for (j=0;j<number_if;j++)
+    {
+        if (memcmp(((struct ether_addr *)head->ether_dhost), &temp_mac[j], sizeof(struct ether_addr)) == 0)
+            {
+         printf("\nReturning True\n");
+         return TRUE;
+        }
+    }*/
+
+    printf("\nReturning False\n");
+    return FALSE;
+
+}
+
+
+ /*void print_message_content(uint8_t *rx_buffer) {
+
+  uint8_t i = 15;
+  while (rx_buffer[i] != '\0') {
+    printf("%c",rx_buffer[i]);
+    i++;
+  }
+  }*/

@@ -28,7 +28,7 @@
 #define HEADER_SIZE		14
 
 /* Function Prototypes */
-int ctrlSend(char *, uint8_t *, int);  
+int ctrlSend(char *, uint8_t *, int);
 int dataSend(char *, uint8_t *, int);
 
 #endif
